@@ -1,0 +1,94 @@
+/* 
+ * Main container for the Altair component
+ * Centers content and takes up the full available space
+ */
+.altair-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 2rem;
+}
+
+/* 
+ * Welcome message styling
+ * Displays when no chart is shown
+ * Provides user instructions and feedback
+ */
+.welcome-message {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  
+  /* Main heading styling */
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--Blue-500);
+  }
+  
+  /* Paragraph text styling */
+  p {
+    font-size: 1.2rem;
+    line-height: 1.5;
+    color: var(--Neutral-80);
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* 
+ * Listening indicator container
+ * Shows when Gemini is actively listening
+ * Provides visual feedback to the user
+ */
+.listening-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
+  
+  /* Text below the pulse animation */
+  p {
+    margin-top: 0.5rem;
+    color: var(--Red-500);
+    font-weight: bold;
+  }
+  
+  /* Animated circle element */
+  .pulse {
+    width: 20px;
+    height: 20px;
+    background-color: var(--Red-500);
+    border-radius: 50%;
+    position: relative;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+/* 
+ * Pulse animation keyframes
+ * Creates a pulsing effect for the listening indicator
+ * Provides visual feedback that the system is actively listening
+ */
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+    box-shadow: 0 0 0 0 rgba(255, 70, 0, 0.7);
+  }
+  
+  70% {
+    transform: scale(1.2);
+    opacity: 1;
+    box-shadow: 0 0 0 10px rgba(255, 70, 0, 0);
+  }
+  
+  100% {
+    transform: scale(0.8);
+    opacity: 0.8;
+    box-shadow: 0 0 0 0 rgba(255, 70, 0, 0);
+  }
+} 

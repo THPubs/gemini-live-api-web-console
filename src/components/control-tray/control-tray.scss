@@ -46,6 +46,11 @@
   }
 }
 
+/* 
+ * Custom CSS property for the microphone volume visual effect
+ * This is used to create a pulsing effect around the microphone button
+ * based on input volume
+ */
 @property --volume {
   syntax: "length";
   inherit: false;
@@ -101,52 +106,47 @@
     background-color: var(--Blue-500);
     color: var(--Neutral-5);
   }
+
+  &.connected {
+    background-color: var(--Red-500);
+    color: var(--Neutral-5);
+  }
 }
 
+/* 
+ * Container for the control tray
+ * Positioned at the bottom of the screen
+ */
 .control-tray {
-  position: absolute;
-  bottom: 0;
+  position: fixed;
+  bottom: 40px;
   left: 50%;
   transform: translate(-50%, 0);
-  display: inline-flex;
+  z-index: 100;
+}
+
+/* 
+ * Container for the talk button and audio indicator
+ * Uses column layout to stack elements vertically
+ */
+.talk-button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 
+ * Audio indicator styling
+ * Shows a visual representation of Gemini's audio output
+ */
+.audio-indicator {
+  background: rgba(31, 148, 255, 0.1);
+  border-radius: 50%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  gap: 8px;
-  padding-bottom: 18px;
-
-  .disabled .action-button,
-  .action-button.disabled {
-    background: rgba(0, 0, 0, 0);
-    border: 1px solid var(--Neutral-30, #404547);
-    color: var(--Neutral-30);
-  }
-
-  .connection-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-
-    .connection-button-container {
-      border-radius: 27px;
-      border: 1px solid var(--Neutral-30);
-      background: var(--Neutral-5);
-      padding: 10px;
-    }
-
-    .text-indicator {
-      font-size: 11px;
-      color: var(--Blue-500);
-      user-select: none;
-    }
-
-    &:not(.connected) {
-      .text-indicator {
-        opacity: 0;
-      }
-    }
-  }
 }
 
 .actions-nav {
@@ -169,6 +169,10 @@
   }
 }
 
+/* 
+ * Animation for the subtle pulsing effect
+ * Used on various elements to indicate activity
+ */
 @keyframes opacity-pulse {
   0% {
     opacity: 0.9;

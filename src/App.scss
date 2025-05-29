@@ -1,4 +1,9 @@
+/* 
+ * Global CSS variables
+ * Defines the color palette and design tokens used throughout the app
+ */
 :root {
+  /* Text and background colors */
   --text: white;
   --gray-200: #b4b8bb;
   --gray-300: #80868b;
@@ -9,6 +14,8 @@
   --gray-900: #111111;
   --gray-1000: #0a0a0a;
   --border-stroke: #444444;
+  
+  /* Accent colors */
   --accent-blue: rgb(161, 228, 242);
   --accent-blue-active-bg: #001233;
   --accent-blue-active: #98beff;
@@ -20,15 +27,18 @@
 
   --accent-red: #ff4600;
 
+  /* Basic theme configuration */
   --background: var(--gray-900);
   --color: var(--text);
 
+  /* Scrollbar styling */
   scrollbar-color: var(--gray-600) var(--gray-900);
   scrollbar-width: thin;
 
+  /* Font configuration */
   --font-family: "Space Mono", monospace;
 
-  /* */
+  /* Neutral color palette */
   --Neutral-00: #000;
   --Neutral-5: #181a1b;
   --Neutral-10: #1c1f21;
@@ -40,24 +50,39 @@
   --Neutral-80: #c3c6c7;
   --Neutral-90: #e1e2e3;
 
+  /* Green palette */
   --Green-500: #0d9c53;
   --Green-700: #025022;
 
+  /* Blue palette */
   --Blue-400: #80c1ff;
   --Blue-500: #1f94ff;
   --Blue-800: #0f3557;
 
+  /* Red palette */
   --Red-400: #ff9c7a;
   --Red-500: #ff4600;
   --Red-600: #e03c00;
   --Red-700: #bd3000;
 }
 
+/* 
+ * Basic body styling
+ * Sets up the global page styling
+ */
 body {
   font-family: "Space Mono", monospace;
-  background: var(--Neutral-30);
+  background: var(--Neutral-15);
+  margin: 0;
+  padding: 0;
+  color: var(--Neutral-80);
+  overflow-x: hidden;
 }
 
+/* 
+ * Google Material Symbols configuration
+ * Used for icons throughout the application
+ */
 .material-symbols-outlined {
   &.filled {
     font-variation-settings:
@@ -68,6 +93,10 @@ body {
   }
 }
 
+/* 
+ * Font style utility classes
+ * Provides consistent typography options
+ */
 .space-mono-regular {
   font-family: "Space Mono", monospace;
   font-weight: 400;
@@ -92,6 +121,9 @@ body {
   font-style: italic;
 }
 
+/* 
+ * Utility classes for common layout needs
+ */
 .hidden {
   display: none;
 }
@@ -112,59 +144,52 @@ body {
   flex-direction: column;
 }
 
-@media (prefers-reduced-motion: no-preference) {
+/* 
+ * Main app container
+ * Ensures the app takes up the full viewport height
+ */
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
+/* 
+ * Streaming console container
+ * This is the main content area of the application
+ */
 .streaming-console {
-  background: var(--Neutral-15);
-  color: var(--gray-300);
+  flex: 1;
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  flex-direction: column;
 
-  a,
-  a:visited,
-  a:active {
-    color: var(--gray-300);
-  }
-
-  .disabled {
-    pointer-events: none;
-
-    > * {
-      pointer-events: none;
-    }
-  }
-
+  /* Main content area */
   main {
-    position: relative;
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-grow: 1;
-    gap: 1rem;
+    position: relative;
     max-width: 100%;
     overflow: hidden;
   }
 
+  /* Container for the Altair component and video elements */
   .main-app-area {
     display: flex;
     flex: 1;
     align-items: center;
     justify-content: center;
-  }
-
-  .function-call {
-    position: absolute;
-    top: 0;
     width: 100%;
-    height: 50%;
-    overflow-y: auto;
+    height: 100%;
   }
 }
 
-/* video player */
+/* 
+ * Video stream styling
+ * Note: Currently hidden in the app, but styled in case it's needed
+ */
 .stream {
   flex-grow: 1;
   max-width: 90%;
