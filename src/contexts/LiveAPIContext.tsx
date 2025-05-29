@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Context for Gemini API access throughout the app
+ */
 import { createContext, FC, ReactNode, useContext } from "react";
 import { useLiveAPI, UseLiveAPIResults } from "../hooks/use-live-api";
 import { LiveClientOptions } from "../types";
@@ -45,26 +48,15 @@ export type LiveAPIProviderProps = {
 };
 
 /**
- * Provider component for the LiveAPIContext
+ * Provider component that makes Gemini API available to all children
  * 
- * Wraps the application with the Gemini Live API context, making
- * the API client and related functionality available to all child components.
- * 
- * This is typically used at the root of your application to provide
- * Gemini functionality throughout the entire component tree.
- * 
- * @example
- * ```tsx
- * <LiveAPIProvider options={{ apiKey: "your-api-key" }}>
- *   <App />
- * </LiveAPIProvider>
- * ```
+ * Wrap your app with this to provide Gemini functionality
  */
 export const LiveAPIProvider: FC<LiveAPIProviderProps> = ({
   options,
   children,
 }) => {
-  // Initialize the Live API hook with the provided options
+  // Initialize the Gemini API
   const liveAPI = useLiveAPI(options);
 
   return (
@@ -75,22 +67,10 @@ export const LiveAPIProvider: FC<LiveAPIProviderProps> = ({
 };
 
 /**
- * Hook to access the LiveAPIContext
+ * Hook to access Gemini API in any component
  * 
- * Use this hook in components that need to interact with the Gemini API.
- * It provides access to the API client and related functionality.
- * 
- * @throws Error if used outside a LiveAPIProvider
- * @returns The Gemini Live API context value
- * 
- * @example
- * ```tsx
+ * Usage:
  * const { client, connected, connect, disconnect } = useLiveAPIContext();
- * 
- * const startConversation = () => {
- *   connect();
- * };
- * ```
  */
 export const useLiveAPIContext = () => {
   const context = useContext(LiveAPIContext);

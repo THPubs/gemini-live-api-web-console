@@ -23,60 +23,62 @@ import VolMeterWorket from "../lib/worklets/vol-meter";
 import { LiveConnectConfig } from "@google/genai";
 
 /**
- * Return type for the useLiveAPI hook
+ * Hook that provides access to the Gemini Live API
  */
 export type UseLiveAPIResults = {
-  client: GenAILiveClient;
-  setConfig: (config: LiveConnectConfig) => void;
-  config: LiveConnectConfig;
-  model: string;
-  setModel: (model: string) => void;
-  connected: boolean;
-  connect: () => Promise<void>;
-  disconnect: () => Promise<void>;
-  volume: number;
+  client: GenAILiveClient;         // The Gemini API client
+  setConfig: (config: LiveConnectConfig) => void; // Change Gemini's settings
+  config: LiveConnectConfig;       // Current settings
+  model: string;                   // Current model name
+  setModel: (model: string) => void; // Change which model to use
+  connected: boolean;              // Whether we're connected to Gemini
+  connect: () => Promise<void>;    // Connect to Gemini
+  disconnect: () => Promise<void>; // Disconnect from Gemini
+  volume: number;                  // Audio volume level (for visualization)
 };
 
 /**
- * Custom hook that provides access to the Gemini Live API
- * Sets up and manages the connection to Gemini, handles audio streaming,
- * and provides methods to control the interaction
+ * Hook to use Gemini Live API
+ * 
+ * @param options - Configuration with API key
+ * @returns Everything needed to interact with Gemini
  */
 export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
-  // Create the Gemini client instance (memoized to prevent recreation)
+  // Create the Gemini client
   const client = useMemo(() => new GenAILiveClient(options), [options]);
-  // Reference to the audio streamer for playing Gemini's voice responses
+  
+  // For playing Gemini's voice responses
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
 
-  // Default model is Gemini 2.0 Flash Experimental
+  // Keep track of model and configuration
   const [model, setModel] = useState<string>("models/gemini-2.0-flash-exp");
-  // Configuration for the Gemini AI (system instructions, tools, etc.)
   const [config, setConfig] = useState<LiveConnectConfig>({});
-  // Track connection state to Gemini
+  
+  // Track connection status and audio volume
   const [connected, setConnected] = useState(false);
-  // Track output volume for visualizations
   const [volume, setVolume] = useState(0);
 
-  // Set up audio streaming for Gemini's voice responses
+  // Set up audio playback
   useEffect(() => {
     if (!audioStreamerRef.current) {
-      // Create audio context for playing sound
+      // Create audio context
       audioContext({ id: "audio-out" }).then((audioCtx: AudioContext) => {
-        // Initialize audio streamer with the context
+        // Create audio streamer
         audioStreamerRef.current = new AudioStreamer(audioCtx);
-        // Add volume meter to track and visualize audio levels
+        
+        // Add volume meter
         audioStreamerRef.current
           .addWorklet<any>("vumeter-out", VolMeterWorket, (ev: any) => {
             setVolume(ev.data.volume);
           })
           .then(() => {
-            // Successfully added worklet
+            // Worklet added successfully
           });
       });
     }
-  }, [audioStreamerRef]);
+  }, []);
 
-  // Set up event listeners for the Gemini client
+  // Set up event listeners
   useEffect(() => {
     // When connection is established
     const onOpen = () => {
@@ -88,19 +90,19 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       setConnected(false);
     };
 
-    // Handle connection errors
+    // When an error occurs
     const onError = (error: ErrorEvent) => {
       console.error("error", error);
     };
 
-    // Stop audio playback when connection is interrupted
+    // Stop audio when connection is interrupted
     const stopAudioStreamer = () => audioStreamerRef.current?.stop();
 
-    // Process incoming audio data from Gemini
+    // Process incoming audio from Gemini
     const onAudio = (data: ArrayBuffer) =>
       audioStreamerRef.current?.addPCM16(new Uint8Array(data));
 
-    // Register all event handlers
+    // Register all event listeners
     client
       .on("error", onError)
       .on("open", onOpen)
@@ -108,7 +110,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       .on("interrupted", stopAudioStreamer)
       .on("audio", onAudio);
 
-    // Cleanup function to remove event handlers when component unmounts
+    // Clean up when component unmounts
     return () => {
       client
         .off("error", onError)
@@ -120,24 +122,24 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
     };
   }, [client]);
 
-  // Function to connect to Gemini
+  // Connect to Gemini
   const connect = useCallback(async () => {
     if (!config) {
       throw new Error("config has not been set");
     }
-    // Ensure any existing connection is closed
+    // Make sure we're disconnected first
     client.disconnect();
-    // Connect with the current model and configuration
+    // Connect with current model and config
     await client.connect(model, config);
   }, [client, config, model]);
 
-  // Function to disconnect from Gemini
+  // Disconnect from Gemini
   const disconnect = useCallback(async () => {
     client.disconnect();
     setConnected(false);
-  }, [setConnected, client]);
+  }, [client]);
 
-  // Return the API client and helper methods/state
+  // Return everything
   return {
     client,
     config,

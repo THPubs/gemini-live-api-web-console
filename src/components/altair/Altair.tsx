@@ -24,11 +24,7 @@ import {
 } from "@google/genai";
 import "./altair.scss";
 
-/**
- * Function declaration for Gemini AI to render charts/graphs
- * This defines the structure of the function that Gemini can call
- * to display visual data in the application
- */
+// Define a function that Gemini can call to create charts
 const declaration: FunctionDeclaration = {
   name: "render_altair",
   description: "Displays an altair graph in json format.",
@@ -46,35 +42,31 @@ const declaration: FunctionDeclaration = {
 };
 
 /**
- * Altair component is responsible for:
- * 1. Configuring the Gemini AI model with appropriate settings
- * 2. Handling function calls from Gemini to render charts
- * 3. Displaying the welcome UI and the visualization area
- * 4. Providing visual feedback about the connection state
+ * Main display area for Gemini responses and charts
  */
 function AltairComponent() {
-  // State to store the JSON string for the chart to render
+  // State to store chart data
   const [jsonString, setJSONString] = useState<string>("");
   
-  // Get Gemini API client and configuration functions from context
+  // Get Gemini API from context
   const { client, setConfig, setModel, connected } = useLiveAPIContext();
 
-  // Configure the Gemini AI model and behavior on component mount
+  // Configure Gemini when component loads
   useEffect(() => {
-    // Set the model to use (Gemini 2.0 Flash Experimental)
+    // Set model version
     setModel("models/gemini-2.0-flash-exp");
     
-    // Configure model settings
+    // Configure Gemini's behavior
     setConfig({
-      // Enable audio response from Gemini
+      // Enable voice responses
       responseModalities: [Modality.AUDIO],
       
-      // Configure the voice settings
+      // Set voice settings
       speechConfig: {
         voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
       },
       
-      // Set the system instruction (prompt) to define Gemini's behavior
+      // Set instructions for Gemini
       systemInstruction: {
         parts: [
           {
@@ -83,42 +75,35 @@ function AltairComponent() {
         ],
       },
       
-      // Enable tools for Gemini to use
+      // Enable tools
       tools: [
-        // Google Search provides up-to-date information
-        { googleSearch: {} },
-        
-        // Function declarations allow Gemini to call our render_altair function
-        { functionDeclarations: [declaration] },
+        { googleSearch: {} }, // Allow web search
+        { functionDeclarations: [declaration] }, // Allow chart creation
       ],
     });
   }, [setConfig, setModel]);
 
   // Handle function calls from Gemini
   useEffect(() => {
-    /**
-     * Handler for tool calls from Gemini
-     * Specifically handles when Gemini wants to render a chart
-     * @param {LiveServerToolCall} toolCall - The tool call from Gemini
-     */
+    // Function to process tool calls
     const onToolCall = (toolCall: LiveServerToolCall) => {
-      // Skip if no function calls in the tool call
+      // Skip if no function calls
       if (!toolCall.functionCalls) {
         return;
       }
       
-      // Find the render_altair function call if it exists
+      // Look for our render_altair function
       const fc = toolCall.functionCalls.find(
         (fc) => fc.name === declaration.name
       );
       
-      // If the render_altair function was called, extract the JSON data
+      // If found, get the chart data
       if (fc) {
         const str = (fc.args as any).json_graph;
         setJSONString(str);
       }
       
-      // Send a response back to Gemini for each function call
+      // Send response back to Gemini
       if (toolCall.functionCalls.length) {
         setTimeout(
           () =>
@@ -134,33 +119,32 @@ function AltairComponent() {
       }
     };
     
-    // Register the tool call handler
+    // Listen for tool calls
     client.on("toolcall", onToolCall);
     
-    // Clean up event handler when component unmounts
+    // Cleanup when unmounting
     return () => {
       client.off("toolcall", onToolCall);
     };
   }, [client]);
 
-  // Reference to the div where the chart will be rendered
+  // Reference to the div where charts will be displayed
   const embedRef = useRef<HTMLDivElement>(null);
 
-  // Render the chart when jsonString changes
+  // Render the chart when data changes
   useEffect(() => {
     if (embedRef.current && jsonString) {
       console.log("jsonString", jsonString);
-      // Use vega-embed to render the chart
       vegaEmbed(embedRef.current, JSON.parse(jsonString));
     }
   }, [embedRef, jsonString]);
 
   return (
     <div className="altair-container">
-      {/* Area where charts will be rendered */}
+      {/* Area for displaying charts */}
       <div className="vega-embed" ref={embedRef} />
       
-      {/* Welcome message when no chart is displayed */}
+      {/* Welcome message (shown when no chart is displayed) */}
       {!jsonString && (
         <div className="welcome-message">
           <h1>Gemini AI Assistant</h1>
@@ -170,7 +154,7 @@ function AltairComponent() {
               : "Click the button below to start talking with me."}
           </p>
           
-          {/* Visual indicator that Gemini is listening */}
+          {/* Listening indicator */}
           {connected && (
             <div className="listening-indicator">
               <div className="pulse"></div>
@@ -183,5 +167,5 @@ function AltairComponent() {
   );
 }
 
-// Memoize the component to prevent unnecessary re-renders
+// Use memo to prevent unnecessary re-renders
 export const Altair = memo(AltairComponent);

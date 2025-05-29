@@ -23,58 +23,46 @@ import AudioPulse from "../audio-pulse/AudioPulse";
 import "./control-tray.scss";
 
 /**
- * Props for the ControlTray component
- * @property {RefObject<HTMLVideoElement>} videoRef - Reference to the video element for displaying webcam feed
- * @property {Function} onVideoStreamChange - Callback for when the video stream changes
+ * Button that controls interaction with Gemini
  */
-export type ControlTrayProps = {
-  videoRef: RefObject<HTMLVideoElement>;
-  onVideoStreamChange?: (stream: MediaStream | null) => void;
+type ControlTrayProps = {
+  videoRef: RefObject<HTMLVideoElement>; // Reference to the video element
+  onVideoStreamChange?: (stream: MediaStream | null) => void; // Callback when video stream changes
 };
 
-/**
- * ControlTray component is responsible for controlling the interaction with Gemini AI.
- * It handles starting/stopping the webcam and microphone, and connects/disconnects from the Gemini API.
- * 
- * Key functionalities:
- * 1. Starting/stopping the webcam
- * 2. Recording and sending audio to Gemini
- * 3. Capturing and sending video frames to Gemini
- * 4. Providing the main user interaction button
- */
 function ControlTray({
   videoRef,
   onVideoStreamChange = () => {},
 }: ControlTrayProps) {
-  // Custom hook to control webcam
+  // Hook to control webcam
   const webcam = useWebcam();
   
-  // State to track the active video stream
+  // State for video stream
   const [activeVideoStream, setActiveVideoStream] = useState<MediaStream | null>(null);
   
-  // Track the volume level of the microphone input
+  // State for audio volume
   const [inVolume, setInVolume] = useState(0);
   
-  // Create an audio recorder instance to handle microphone input
+  // Create audio recorder
   const [audioRecorder] = useState(() => new AudioRecorder());
   
-  // Reference to the canvas used for processing video frames
+  // Reference to canvas for processing video frames
   const renderCanvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Reference to the main button for accessibility focus
+  // Reference to button for focus
   const talkButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Get the Gemini API client and state from context
+  // Get Gemini API from context
   const { client, connected, connect, disconnect, volume } = useLiveAPIContext();
 
-  // Focus the talk button when not connected for better accessibility
+  // Focus button when not connected
   useEffect(() => {
     if (!connected && talkButtonRef.current) {
       talkButtonRef.current.focus();
     }
   }, [connected]);
 
-  // Update the visual volume indicator based on microphone input
+  // Update volume visual effect
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--volume",
@@ -82,13 +70,10 @@ function ControlTray({
     );
   }, [inVolume]);
 
-  // Handle audio recording and sending to Gemini
+  // Handle audio recording and sending
   useEffect(() => {
-    /**
-     * Callback for when audio data is available from the microphone
-     * Converts the audio data to base64 and sends it to Gemini
-     */
-    const onData = (base64: string) => {
+    // Function to send audio to Gemini
+    const sendAudio = (base64: string) => {
       client.sendRealtimeInput([
         {
           mimeType: "audio/pcm;rate=16000",
@@ -97,34 +82,29 @@ function ControlTray({
       ]);
     };
     
-    // Start or stop the audio recorder based on connection state
+    // Start or stop recording based on connection state
     if (connected && audioRecorder) {
-      // When connected, start recording and register event handlers
-      audioRecorder.on("data", onData).on("volume", setInVolume).start();
+      audioRecorder.on("data", sendAudio).on("volume", setInVolume).start();
     } else {
-      // When disconnected, stop recording
       audioRecorder.stop();
     }
     
-    // Clean up event handlers when component unmounts
+    // Clean up when component unmounts
     return () => {
-      audioRecorder.off("data", onData).off("volume", setInVolume);
+      audioRecorder.off("data", sendAudio).off("volume", setInVolume);
     };
   }, [connected, client, audioRecorder]);
 
-  // Handle video streaming and sending to Gemini
+  // Handle video streaming
   useEffect(() => {
-    // Set the video element's source to the active stream
+    // Connect video element to stream
     if (videoRef.current) {
       videoRef.current.srcObject = activeVideoStream;
     }
 
     let timeoutId = -1;
 
-    /**
-     * Captures video frames from the webcam, processes them, and sends them to Gemini
-     * This function uses a canvas to resize the image before sending
-     */
+    // Function to capture and send video frames
     function sendVideoFrame() {
       const video = videoRef.current;
       const canvas = renderCanvasRef.current;
@@ -133,65 +113,52 @@ function ControlTray({
         return;
       }
 
-      // Resize the canvas to match video dimensions (at 25% scale to reduce data size)
+      // Resize video to 25% for efficiency
       const ctx = canvas.getContext("2d")!;
       canvas.width = video.videoWidth * 0.25;
       canvas.height = video.videoHeight * 0.25;
       
       if (canvas.width + canvas.height > 0) {
-        // Draw the video frame onto the canvas at the reduced size
+        // Draw frame to canvas
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         
-        // Convert the canvas to a JPEG data URL and extract the base64 data
+        // Convert to JPEG and send to Gemini
         const base64 = canvas.toDataURL("image/jpeg", 1.0);
         const data = base64.slice(base64.indexOf(",") + 1, Infinity);
-        
-        // Send the frame to Gemini
         client.sendRealtimeInput([{ mimeType: "image/jpeg", data }]);
       }
       
-      // Schedule the next frame capture if still connected (2 frames per second)
+      // Schedule next frame (2 frames per second)
       if (connected) {
         timeoutId = window.setTimeout(sendVideoFrame, 1000 / 0.5);
       }
     }
     
-    // Start capturing frames when connected and a stream is available
+    // Start sending frames when connected
     if (connected && activeVideoStream !== null) {
       requestAnimationFrame(sendVideoFrame);
     }
     
-    // Clean up timeout when component unmounts or dependencies change
+    // Clean up when component unmounts
     return () => {
       clearTimeout(timeoutId);
     };
   }, [connected, activeVideoStream, client, videoRef]);
 
-  /**
-   * Handles starting or stopping the Gemini conversation
-   * When starting: 
-   * 1. Activates the webcam
-   * 2. Connects to Gemini API
-   * When stopping:
-   * 1. Disconnects from Gemini API
-   * 2. Stops the webcam
-   */
+  // Function to start or stop talking to Gemini
   const toggleGemini = async () => {
     if (connected) {
-      // Stop talking to Gemini
+      // If connected, stop everything
       disconnect();
       webcam.stop();
       setActiveVideoStream(null);
       onVideoStreamChange(null);
     } else {
-      // Start talking to Gemini
+      // If not connected, start webcam and connect
       try {
-        // First start webcam
         const mediaStream = await webcam.start();
         setActiveVideoStream(mediaStream);
         onVideoStreamChange(mediaStream);
-        
-        // Then connect to Gemini
         await connect();
       } catch (error) {
         console.error("Failed to start webcam or connect to Gemini", error);
@@ -201,11 +168,11 @@ function ControlTray({
 
   return (
     <section className="control-tray">
-      {/* Hidden canvas used for processing video frames */}
+      {/* Hidden canvas for processing video */}
       <canvas style={{ display: "none" }} ref={renderCanvasRef} />
       
       <div className="talk-button-container">
-        {/* Main button for starting/stopping interaction with Gemini */}
+        {/* Main button */}
         <button
           ref={talkButtonRef}
           className={cn("talk-button", { connected })}
@@ -220,7 +187,7 @@ function ControlTray({
           </span>
         </button>
         
-        {/* Audio indicator that shows when Gemini is responding */}
+        {/* Audio indicator (only shown when connected) */}
         {connected && (
           <div className="audio-indicator">
             <AudioPulse volume={volume} active={connected} hover={false} />
